@@ -1,0 +1,22 @@
+
+#box {
+  width: 95%;
+  height: 700px;
+  margin: auto;
+}
+
+.container {
+  width: 48%;
+  height: 700px;
+  float: left;
+  background-color: rgba(239,239,239,.5);
+  margin: 1%;
+  border-radius: 30px;
+}
+
+.text-box {
+  font-size: 28px;
+  text-align: center;
+  padding: 50px 20px;
+  color: #444444;
+}
