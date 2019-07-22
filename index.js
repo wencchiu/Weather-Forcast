@@ -18,23 +18,6 @@
 //   //console.log(county);
 // })
 
-//
-//
-// var weatherData = fetch('http://api.openweathermap.org/data/2.5/weather?id=1668355&units=metric&lang=zh_cn&APPID=f15c3f9db83e5f93fbd338d8a7cd8f96')
-// var weatherData2 = weatherData.then(function(response2){
-//   return response2.json();
-// })
-//
-// weatherData2.then(function(weatherData3){
-//   var main = document.getElementById("description");
-//   main.innerHTML = weatherData3.weather[0].description;
-//   console.log(weatherData3);
-//   var temp = document.getElementById("temperature");
-//   temp.innerHTML = weatherData3.main.temp;
-//   var windspeed = document.getElementById("wind");
-//   windspeed.innerHTML = weatherData3.wind.speed;
-//
-// })
 
 var lat, long, getLocationUrl, currentCity, currentRegion;
 
@@ -101,18 +84,56 @@ var arr7dWx = [];
 var arr7dmaxT = [];
 var arr7dminT = [];
 
-var arrWxClear01 = [1, 2];
-var arrWxClearCloudy02 = [3];
-var arrWxCloudy03 = [4, 5, 6, 7];
-var arrWxCloudyRain04 = [8, 9, 10, 11, 12, 13, 14, 20, 29, 30, 31, 32, 37, 38, 39];
-var arrWxClearCloudyRain05 = [19];
-var arrWxCloudyThundershower06 = [15, 16, 17, 18, 22, 33, 34, 35, 36, 41];
-var arrWxClearCloudyThundershower07 = [21];
-var arrWxCloudySnow08 = [23];
-var arrWxClearCloudyFog09 = [24, 25];
-var arrWxCloudyFog10 = [26, 27, 28];
-var arrWxSnow11 = [42];
+var CLEAR = 0;
+var CLEAR_CLOUDY = 1;
+var CLOUDY = 2;
+var CLOUDY_RAIN = 3;
+var CLEAR_CLOUDY_RAIN = 4;
+var CLOUDY_THUNDER = 5;
+var CLEAR_CLOUDY_THUNDER = 6;
+var CLOUDY_SNOW = 7;
+var CLOUDY_FOG = 8;
+var CLEAR_CLOUDY_FOG = 9;
+var SNOW = 10;
 
+
+var WEATHER_CODE = [
+  [[1, 2], CLEAR],
+  [[3], CLEAR_CLOUDY],
+  [[4, 5, 6, 7], CLOUDY],
+  [[8, 9, 10, 11, 12, 13, 14], CLOUDY_RAIN],
+  [[15, 16, 17, 18], CLOUDY_THUNDER],
+  [[19], CLEAR_CLOUDY_RAIN],
+  [[20], CLOUDY_RAIN],
+  [[21], CLEAR_CLOUDY_THUNDER],
+  [[22], CLOUDY_THUNDER],
+  [[23], CLOUDY_SNOW],
+  [[24, 25], CLEAR_CLOUDY_FOG],
+  [[26, 27, 28], CLOUDY_FOG],
+  [[29, 30, 31, 32], CLOUDY_RAIN],
+  [[33, 34, 35, 36], CLOUDY_THUNDER],
+  [[37, 38, 39], CLOUDY_RAIN],
+  [[41], CLOUDY_THUNDER],
+  [[42], SNOW],
+];
+
+function getWeatherCode(arr, target) {
+  var L = 0, R = arr.length-1;
+  while (L <= R) {
+    var M = Math.floor((L + R)/2);
+    if (arr[M][0][0] === target) {
+      return arr[M][1];
+    } else if (arr[M][0][0] > target) {
+      R = M - 1;
+    } else {
+      if (arr[M][0].indexOf(target) === -1) {
+        L = M + 1;
+      } else {
+        return arr[M][1];
+      }
+    }
+  }
+}
 
 function getForecastData() {
   switch (currentCity) {
@@ -228,6 +249,7 @@ function forecast48hr() {
       }
     }
     console.log(regionforecast48hr);
+    // Get 48hr forecast Time & temperature
     arrTemp = regionforecast48hr.weatherElement[3].time;
     for (var i = 0; i < arrTemp.length; i++) {
       arr48hrTime[i] = arrTemp[i].dataTime;
@@ -253,6 +275,7 @@ function forecast48hr() {
       td.innerHTML = e + '&#8451' ;
       forecastTemp48hr.append(td);
     })
+    // Get 48hr forecast PoP6h
     arrPoP6hTemp = regionforecast48hr.weatherElement[7].time;
     for (var i = 0; i < arrPoP6hTemp.length; i++) {
       arr48hrPoP6h[i] = arrPoP6hTemp[i].elementValue[0].value;
@@ -265,6 +288,21 @@ function forecast48hr() {
       td2.innerHTML = e + "%" ;
       forecastPoP6h48hr.append(td1);
       forecastPoP6h48hr.append(td2);
+    })
+    // Get 48hr forecast Wx
+    arr48hrWxTemp = regionforecast48hr.weatherElement[1].time;
+    for (var i = 0; i < arr48hrWxTemp.length; i++) {
+       Wx48hrTemp = parseInt(arr48hrWxTemp[i].elementValue[1].value);
+       arr48hrWx[i] = getWeatherCode(WEATHER_CODE, Wx48hrTemp);
+    }
+    forecastWx48hr = document.getElementById("forecast-48hrs-Wx");
+    arr48hrWx.forEach(function (e) {
+      var td = document.createElement("td");
+      var div = document.createElement("div");
+      Wx48hrClass = "WxImage" + e;
+      div.classList.add("WxImage", Wx48hrClass);
+      td.append(div);
+      forecastWx48hr.append(td);
     })
   })
 }
@@ -342,17 +380,31 @@ function forecast7d() {
     })
     // Get 7days forcast Wx //
     arr7dWxTemp = regionforecast7d.weatherElement[6].time;
-
     for (var i = 1; i < arr7dWxTemp.length; i++) {
       if (todayDD !== parseInt(arr7dWxTemp[i].startTime.slice(8,10))) {
         for (var j = i; j < arr7dWxTemp.length; j+=2) {
-          var maxTemp = Math.max(parseInt(arr7dmaxTTemp[j].elementValue[0].value), parseInt(arr7dmaxTTemp[j+1].elementValue[0].value))
-          arr7dmaxT.push(maxTemp);
+          var WxM = parseInt(arr7dWxTemp[j].elementValue[1].value);
+          var WxN = parseInt(arr7dWxTemp[j+1].elementValue[1].value);
+          var WxMCode = getWeatherCode(WEATHER_CODE, WxM);
+          var WxNCode = getWeatherCode(WEATHER_CODE, WxN);
+          if (WxMCode === WxNCode) {
+            arr7dWx.push(WxMCode);
+          } else {
+            arr7dWx.push(Math.max(WxMCode, WxNCode));
+          }
         }
         break;
       }
     }
-
+    forecastWx7d = document.getElementById("forecast-7d-Wx");
+    arr7dWx.forEach(function (e) {
+      var td = document.createElement("td");
+      var div = document.createElement("div");
+      WxClass = "WxImage" + e;
+      div.classList.add("WxImage", WxClass);
+      td.append(div);
+      forecastWx7d.append(td);
+    })
 
   })
   }

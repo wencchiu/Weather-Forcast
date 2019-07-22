@@ -20,3 +20,55 @@
   padding: 50px 20px;
   color: #444444;
 }
+
+.WxImage {
+  width: 64px;
+  height: 64px;
+  background-image: url("Climacons.png");
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.WxImage0 {
+  background-position: -64px -256px;
+}
+
+.WxImage1 {
+  background-position: -128px 0;
+}
+
+.WxImage2 {
+  background-position: 0 0;
+}
+
+.WxImage3 {
+  background-position: -256px 0;
+}
+
+.WxImage4 {
+  background-position: -320px 0;
+}
+
+.WxImage5 {
+  background-position: -512px -192px;
+}
+
+.WxImage6 {
+  background-position: -576px -192px;
+}
+
+.WxImage7 {
+  background-position: -320px -128px;
+}
+
+.WxImage8 {
+  background-position: -512px -128px ;
+}
+
+.WxImage9 {
+  background-position: -576px -128px;
+}
+
+.WxImage10 {
+  background-position: -320px -320px;
+}
