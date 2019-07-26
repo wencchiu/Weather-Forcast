@@ -19,7 +19,37 @@
   text-align: center;
   padding: 50px 20px;
   color: #444444;
+  overflow: hidden;
 }
+
+.current-info-2 {
+  display: inline-block;
+  width: 200px;
+  height: 250px;
+}
+
+.text-box div p:first-of-type {
+  font-size: 36px;
+  margin: 10px auto;
+}
+
+.imgPoP {
+  background-position: 0 -448px;
+}
+
+.imgUVI {
+  background-position: -64px -256px;
+}
+
+.imgUVI-night {
+  background-position: -384px -256px;
+}
+
+
+#current-temp {
+  font-size: 100px;
+}
+
 
 .WxImage {
   width: 64px;

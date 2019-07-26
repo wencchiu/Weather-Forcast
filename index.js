@@ -1,31 +1,11 @@
 
-// var data = fetch('https://pm25.lass-net.org/data/last-all-epa.json')
-//
-// var data2 = data.then(function(response) {
-//     return response.json();
-//   })
-//
-// data2.then(function(gary){
-//   var site = gary.feeds.find(function(element){
-//     return element.SiteName ==="臺南";
-//   })
-//   var county = document.getElementById("site");
-//     county.textContent = site.SiteName;
-//   var AQI = document.getElementById("aqi");
-//     AQI.textContent = "AQI=" + site.AQI;
-//   var PM25 = document.getElementById("pm25");
-//     PM25.textContent = "PM2.5=" + site.PM2_5;
-//   //console.log(county);
-// })
-
-
-var lat, long, getLocationUrl, currentCity, currentRegion;
+var currentLat, currentLong, getLocationUrl, currentCity, currentRegion;
 
 navigator.geolocation.getCurrentPosition(success);
 function success(pos){
-	lat = pos.coords.latitude;
-  long = pos.coords.longitude;
-  getLocationUrl = "https://api.mapbox.com/geocoding/v5/mapbox.places/"+ long + "," + lat + ".json?language=zh-Hant&access_token=pk.eyJ1Ijoid2VuY2hpdSIsImEiOiJjanh2b2hraHAwNW80M2JrZHFkanBmZGtqIn0.xPJ3QUe41GZXPtVGbFZAyw";
+	currentLat = pos.coords.latitude;//23.055310;   //23.184047;  //22.977761;
+  currentLong = pos.coords.longitude; //121.167953;  //120.242576;  //120.220111;
+  getLocationUrl = "https://api.mapbox.com/geocoding/v5/mapbox.places/"+ currentLong + "," + currentLat + ".json?language=zh-Hant&access_token=pk.eyJ1Ijoid2VuY2hpdSIsImEiOiJjanh2b2hraHAwNW80M2JrZHFkanBmZGtqIn0.xPJ3QUe41GZXPtVGbFZAyw";
   presentLocation();
 }
 
@@ -37,37 +17,123 @@ function presentLocation() {
   console.log(currentLocation2);
   currentLocation2.then(function(location) {
     var loc = document.getElementById("location");
-    loc.textContent = "現在位置：" + location.features[3].text + " "+ location.features[2].text;
-    currentCity = location.features[3].text;
-    currentRegion = location.features[2].text;
+    location.features.forEach(function (e) {
+      if (e.place_type[0] === "region") {
+        currentCity = e.text;
+      }
+      if (e.place_type[0] === "place") {
+        currentRegion = e.text;
+      }
+    })
+    loc.textContent = "現在位置：" + currentCity + " "+ currentRegion;
     getForecastData();
+    presentCurrentObs();
+    getAQI();
   });
 }
 
 
-var arrNewTaipeiCity06 = [];
-var arrTaipeiCity01 = [];
-
-var getCurrentObsUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0001-001?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
+var arrObsInCity = [], arrObsInCityD = [], arrObsInCityTemp = [];
+var nearStation, nearTemp;
+var currentWeatherImage, currentWeather, currentTemp, currentAQI, currentPoP, currentUVI;
+var nowWxImage, nowWx, nowPoP, nowUVI;
+var getCurrentAutoObsUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0001-001?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
+var getCurrentManObsUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
 function presentCurrentObs() {
-  var currentObs = fetch(getCurrentObsUrl);
-  var currentObs2 = currentObs.then(function (res) {
+  // get auto-observation data into city/county array
+  var currentAutoObs = fetch(getCurrentAutoObsUrl);
+  var currentAutoObs2 = currentAutoObs.then(function (res) {
     return res.json();
   })
-  currentObs2.then(function (allstation) {
+  console.log(currentAutoObs2);
+  currentAutoObs2.then(function (allstation) {
     var arrAll = allstation.records.location;
-    for (var i = 0; i < arrAll.length; i++) {
-      if (arrAll[i].parameter[1].parameterValue === "01") {
-        arrTaipeiCity01.push(arrAll[i]);
+    if (arrObsInCityTemp.length === 0){
+      for (var i = 0; i < arrAll.length; i++) {
+        if (arrAll[i].parameter[0].parameterValue === currentCity) {
+          arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "auto"]);
+        }
       }
-      if (arrAll[i].parameter[1].parameterValue === "06") {
-        arrNewTaipeiCity06.push(arrAll[i]);
+    } else {
+      for (var i = 0; i < arrAll.length; i++) {
+        if (arrAll[i].parameter[0].parameterValue === currentCity) {
+          arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "auto"]);
+        }
+      }
+      getNearestStation(arrObsInCityTemp);
+    }
+  })
+  // get manual-observation data into city/county array
+  var currentManObs = fetch(getCurrentManObsUrl);
+  var currentManObs2 = currentManObs.then(function (res) {
+    return res.json();
+  })
+  console.log(currentManObs2);
+  currentManObs2.then(function (allstation) {
+    var arrAll = allstation.records.location;
+    if (arrObsInCityTemp.length === 0){
+      for (var i = 0; i < arrAll.length; i++) {
+        if (arrAll[i].parameter[0].parameterValue === currentCity) {
+          arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "manual"]);
+        }
+      }
+    } else {
+      for (var i = 0; i < arrAll.length; i++) {
+        if (arrAll[i].parameter[0].parameterValue === currentCity) {
+          arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "manual"]);
+        }
+      }
+      getNearestStation(arrObsInCityTemp);
+    }
+  })
+  // get the nearest station (in both auto & manual stations) temp data
+  function getNearestStation(arrObsInCity) {
+    for (var i = 0; i < arrObsInCity.length; i++) {
+      d = Math.pow(arrObsInCity[i][0]-currentLat, 2) + Math.pow(arrObsInCity[i][1]-currentLong, 2);
+      arrObsInCityD.push(d);
+    }
+    nearStation = arrObsInCity[arrObsInCityD.indexOf(Math.min(...arrObsInCityD))][2];
+    nearTemp = arrObsInCity[arrObsInCityD.indexOf(Math.min(...arrObsInCityD))][3];
+    console.log(nearStation, nearTemp);
+    currentTemp = document.getElementById("current-temp");
+    currentTemp.innerHTML = Math.round(nearTemp) + '&#8451';
+  }
+}
+
+
+var getCurrentAQIUrl = "https://opendata.epa.gov.tw/api/v1/AQI?%24skip=0&%24top=1000&%24format=json";
+var arrAQIInCity = [], arrAQIInCityD = [];
+var nearAQIStation, nearAQI, nearAQIStatus, currentAQI;
+function getAQI() {
+  var AQI = fetch(getCurrentAQIUrl).then(function (res) {
+    return res.json();
+  })
+  AQI.then(function (res) {
+    for (var i = 0; i < res.length; i++) {
+      if (res[i].County === currentCity ) {
+        if (res[i].AQI !== "") {
+          arrAQIInCity.push(res[i]);
+        }
       }
     }
+    for (var i = 0; i < arrAQIInCity.length; i++) {
+      d = Math.pow(arrAQIInCity[i].Latitude - currentLat, 2) + Math.pow(arrAQIInCity[i].Longitude - currentLong, 2);
+      arrAQIInCityD.push(d);
+    }
+    nearAQIStation = arrAQIInCity[arrAQIInCityD.indexOf(Math.min(...arrAQIInCityD))].SiteName;
+    nearAQI = arrAQIInCity[arrAQIInCityD.indexOf(Math.min(...arrAQIInCityD))].AQI;
+    nearAQIStatus = arrAQIInCity[arrAQIInCityD.indexOf(Math.min(...arrAQIInCityD))].Status;
+    console.log(nearAQIStation, nearAQI, nearAQIStatus);
+    currentAQI = document.getElementById("current-AQI");
+    div1 = document.createElement("div");
+    div2 = document.createElement("div");
+    div1.textContent = nearAQI;
+    div1.style.fontSize = "64px";
+    div2.textContent = nearAQIStatus;
+    currentAQI.append(div1, div2);
   })
 }
 
-// presentCurrentObs();
 
 var getforecast48hrUrl, getforecast7dUrl, regionforecast48hr, regionforecast7d;
 
@@ -95,7 +161,6 @@ var CLOUDY_SNOW = 7;
 var CLOUDY_FOG = 8;
 var CLEAR_CLOUDY_FOG = 9;
 var SNOW = 10;
-
 
 var WEATHER_CODE = [
   [[1, 2], CLEAR],
@@ -137,10 +202,6 @@ function getWeatherCode(arr, target) {
 
 function getForecastData() {
   switch (currentCity) {
-    case "臺北市":
-      getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-061?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
-      getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-063?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
-      break;
     case "宜蘭縣":
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-001?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
       getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-003?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
@@ -159,7 +220,7 @@ function getForecastData() {
       break;
     case "彰化縣":
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-017?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
-      getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-0019?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
+      getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-019?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
       break;
     case "南投縣":
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-021?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
@@ -177,7 +238,7 @@ function getForecastData() {
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-033?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
       getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-035?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
       break;
-    case "台東縣":
+    case "臺東縣":
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-037?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
       getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-039?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
       break;
@@ -199,7 +260,7 @@ function getForecastData() {
       break;
     case "嘉義市":
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-057?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
-      getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-0059?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
+      getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-059?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
       break;
     case "臺北市":
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-061?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
@@ -219,7 +280,7 @@ function getForecastData() {
       break;
     case "臺南市":
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-077?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
-      getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-0079?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
+      getforecast7dUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-079?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
       break;
     case "連江縣":
       getforecast48hrUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-081?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
@@ -291,10 +352,12 @@ function forecast48hr() {
     })
     // Get 48hr forecast Wx
     arr48hrWxTemp = regionforecast48hr.weatherElement[1].time;
+    console.log(arr48hrWxTemp);
     for (var i = 0; i < arr48hrWxTemp.length; i++) {
        Wx48hrTemp = parseInt(arr48hrWxTemp[i].elementValue[1].value);
        arr48hrWx[i] = getWeatherCode(WEATHER_CODE, Wx48hrTemp);
     }
+
     forecastWx48hr = document.getElementById("forecast-48hrs-Wx");
     arr48hrWx.forEach(function (e) {
       var td = document.createElement("td");
@@ -304,6 +367,7 @@ function forecast48hr() {
       td.append(div);
       forecastWx48hr.append(td);
     })
+    // Get current PoP 
   })
 }
 
@@ -408,9 +472,6 @@ function forecast7d() {
 
   })
   }
-
-
-
 
 
 
