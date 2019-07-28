@@ -1,6 +1,6 @@
 
 var currentLat, currentLong, getLocationUrl, currentCity, currentRegion;
-var todayDD;
+var todayDD = new Date().getDate();
 
 navigator.geolocation.getCurrentPosition(success);
 function success(pos){
@@ -15,7 +15,6 @@ function presentLocation() {
   var currentLocation2 = currentLocation.then(function (res) {
     return res.json();
   })
-  console.log(currentLocation2);
   currentLocation2.then(function(location) {
     var loc = document.getElementById("location");
     location.features.forEach(function (e) {
@@ -108,13 +107,11 @@ var nearManStation, nearUVI;
 
 function getCurrentUVI(allstation) {
   var arrManStation = allstation.records.location;
-  console.log(arrManStation);
   for (var i = 0; i < arrManStation.length; i++) {
     if (arrManStation[i].parameter[0].parameterValue === currentCity) {
       arrManStationInCity.push([arrManStation[i].lat, arrManStation[i].lon, arrManStation[i].locationName, arrManStation[i].weatherElement[13].elementValue]);
     }
   }
-
   for (var i = 0; i < arrManStationInCity.length; i++) {
     d = Math.pow(arrManStationInCity[i][0]-currentLat, 2) + Math.pow(arrManStationInCity[i][1]-currentLong, 2);
     arrManStationInCityD.push(d);
@@ -124,7 +121,6 @@ function getCurrentUVI(allstation) {
   currentUVI = document.getElementById("current-UVI");
   div1 = document.createElement("div");
   div2 = document.createElement("div");
-  console.log(nearManStation,nearUVI);
   switch (nearUVI) {
     case -99 || 0 || 1 || 2:
       div2.innerHTML = "低量級";
@@ -390,7 +386,6 @@ function forecast48hr() {
       arr48hrTime[i] = arrTemp[i].dataTime;
       arr48hrTemp[i] = arrTemp[i].elementValue[0].value;
     }
-
     forecastTime48hr = document.getElementById("forecast-48hrs-time");
     for (var i = 0; i < arr48hrTime.length; i++) {
       var th = document.createElement("th");
@@ -399,16 +394,17 @@ function forecast48hr() {
       var getDay = timeDate.getDay();
       var getDate = timeDate.getDate();
       var DayTemp = arrDay[getDay];
-      if (arr48hrTime[i][5] === "0" ) {
-        th.textContent = arr48hrTime[i].slice(6,7) + "/" + arr48hrTime[i].slice(8,10) + "(" + DayTemp + ") " + arr48hrTime[i].slice(11,16);
-      } else {
-        th.textContent = arr48hrTime[i].slice(5,7) + "/" + arr48hrTime[i].slice(8,10) + "(" + DayTemp + ") " + arr48hrTime[i].slice(11,16);
+      if (todayDD === getDate) {
+        th.textContent = "今天" + arr48hrTime[i].slice(11,16);
+      } else if ( todayDD+1 === getDate ) {
+        th.textContent = "明天"  + arr48hrTime[i].slice(11,16);
+      } else if ( todayDD+2 === getDate ) {
+        th.textContent = "後天"  + arr48hrTime[i].slice(11,16);
       }
       forecastTime48hr.append(th);
       if (i >= 1 && getDate === parseInt(arr48hrTime[i-1].slice(8,10)) ) {
         th.textContent = arr48hrTime[i].slice(11,16);
       }
-
     }
 
     forecastTemp48hr = document.getElementById("forecast-48hrs-temp");
@@ -468,10 +464,8 @@ function forecast7d() {
         regionforecast7d =  arr7d[i];
       }
     }
-    console.log(regionforecast7d);
     // Get 7days forcast Date //
     arr7dDateTemp = regionforecast7d.weatherElement[8].time;
-    todayDD = new Date().getDate();
     for (var i = 1; i < arr7dDateTemp.length; i++) {
       if (todayDD !== parseInt(arr7dDateTemp[i].startTime.slice(8,10))) {
         for (var j = i; j < arr7dDateTemp.length; j+=2) {
