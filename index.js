@@ -1,5 +1,6 @@
 
 var currentLat, currentLong, getLocationUrl, currentCity, currentRegion;
+var todayDD;
 
 navigator.geolocation.getCurrentPosition(success);
 function success(pos){
@@ -45,7 +46,6 @@ function presentCurrentObs() {
   var currentAutoObs2 = currentAutoObs.then(function (res) {
     return res.json();
   })
-  console.log(currentAutoObs2);
   currentAutoObs2.then(function (allstation) {
     var arrAll = allstation.records.location;
     if (arrObsInCityTemp.length === 0){
@@ -68,7 +68,6 @@ function presentCurrentObs() {
   var currentManObs2 = currentManObs.then(function (res) {
     return res.json();
   })
-  console.log(currentManObs2);
   currentManObs2.then(function (allstation) {
     var arrAll = allstation.records.location;
     if (arrObsInCityTemp.length === 0){
@@ -85,6 +84,7 @@ function presentCurrentObs() {
       }
       getNearestStation(arrObsInCityTemp);
     }
+    getCurrentUVI(allstation);
   })
   // get the nearest station (in both auto & manual stations) temp data
   function getNearestStation(arrObsInCity) {
@@ -96,10 +96,66 @@ function presentCurrentObs() {
     nearTemp = arrObsInCity[arrObsInCityD.indexOf(Math.min(...arrObsInCityD))][3];
     console.log(nearStation, nearTemp);
     currentTemp = document.getElementById("current-temp");
-    currentTemp.innerHTML = Math.round(nearTemp) + '&#8451';
+    div = document.createElement("div");
+    div.innerHTML = Math.round(nearTemp) + '&#8451';
+    div.classList.add("current-temp-text") ;
+    currentTemp.append(div)
   }
 }
 
+var arrManStationInCity = [], arrManStationInCityD = [];
+var nearManStation, nearUVI;
+
+function getCurrentUVI(allstation) {
+  var arrManStation = allstation.records.location;
+  console.log(arrManStation);
+  for (var i = 0; i < arrManStation.length; i++) {
+    if (arrManStation[i].parameter[0].parameterValue === currentCity) {
+      arrManStationInCity.push([arrManStation[i].lat, arrManStation[i].lon, arrManStation[i].locationName, arrManStation[i].weatherElement[13].elementValue]);
+    }
+  }
+
+  for (var i = 0; i < arrManStationInCity.length; i++) {
+    d = Math.pow(arrManStationInCity[i][0]-currentLat, 2) + Math.pow(arrManStationInCity[i][1]-currentLong, 2);
+    arrManStationInCityD.push(d);
+  }
+  nearManStation = arrManStationInCity[arrManStationInCityD.indexOf(Math.min(...arrManStationInCityD))][2];
+  nearUVI = parseInt(arrManStationInCity[arrManStationInCityD.indexOf(Math.min(...arrManStationInCityD))][3]);
+  currentUVI = document.getElementById("current-UVI");
+  div1 = document.createElement("div");
+  div2 = document.createElement("div");
+  console.log(nearManStation,nearUVI);
+  switch (nearUVI) {
+    case -99 || 0 || 1 || 2:
+      div2.innerHTML = "低量級";
+      break;
+    case 3 || 4 || 5:
+      currentUVI.classList.add("level-mid");
+      div2.innerHTML = "中量級";
+      break;
+    case 6 || 7:
+      currentUVI.classList.add("level-high");
+      div2.innerHTML = "高量級";
+      break;
+    case 8 || 9 || 10:
+      currentUVI.classList.add("level-over");
+      div2.innerHTML = "過量級";
+      break;
+    case ( (nearUVI>10) ? nearUVI : -1 ):
+      currentUVI.classList.add("level-danger");
+      div2.innerHTML = "危險級";
+      break;
+    default:
+      div2.innerHTML ="發生錯誤";
+  }
+  if (nearUVI === -99) {
+    div1.innerHTML = 0;
+  } else {
+    div1.innerHTML = nearUVI;
+  }
+  div1.classList.add("current-AQI-text");
+  currentUVI.append(div1, div2);
+}
 
 var getCurrentAQIUrl = "https://opendata.epa.gov.tw/api/v1/AQI?%24skip=0&%24top=1000&%24format=json";
 var arrAQIInCity = [], arrAQIInCityD = [];
@@ -127,8 +183,27 @@ function getAQI() {
     currentAQI = document.getElementById("current-AQI");
     div1 = document.createElement("div");
     div2 = document.createElement("div");
+    switch (nearAQIStatus) {
+      case "普通":
+        currentAQI.classList.add("level-mid");
+        break;
+      case "對敏感族群不健康":
+        currentAQI.classList.add("level-high");
+        break;
+      case "對所有族群不健康":
+        currentAQI.classList.add("level-over");
+        break;
+      case "非常不健康":
+        currentAQI.classList.add("level-danger");
+        break;
+      case "危害":
+        currentAQI.classList.add("level-damage");
+        break;
+      default:
+        div2.textContent = "發生錯誤"
+    }
     div1.textContent = nearAQI;
-    div1.style.fontSize = "64px";
+    div1.classList.add("current-AQI-text");
     div2.textContent = nearAQIStatus;
     currentAQI.append(div1, div2);
   })
@@ -141,7 +216,7 @@ var forecastTime48hr, forecastTemp48hr, forecastWx48hr, forecastPoP6h48hr;
 var arr48hrTime = [];
 var arr48hrTemp = [];
 var arr48hrPoP6h = [];
-var arr48hrWx = [];
+var arr48hrWx = [], arrTempHours = [];
 
 var forecastDate7d, forecastWx7d, forecastmaxT7d, forecastminT7d;
 var arr7dDateTemp;
@@ -309,27 +384,33 @@ function forecast48hr() {
         regionforecast48hr =  arr48hr[i];
       }
     }
-    console.log(regionforecast48hr);
     // Get 48hr forecast Time & temperature
     arrTemp = regionforecast48hr.weatherElement[3].time;
-    for (var i = 0; i < arrTemp.length; i++) {
+    for (var i = 0; i < 16; i++) {
       arr48hrTime[i] = arrTemp[i].dataTime;
       arr48hrTemp[i] = arrTemp[i].elementValue[0].value;
     }
+
     forecastTime48hr = document.getElementById("forecast-48hrs-time");
-    arr48hrTime.forEach(function (e) {
+    for (var i = 0; i < arr48hrTime.length; i++) {
       var th = document.createElement("th");
-      var timeDate = new Date(e.slice(0,4), e.slice(5,7)-1, e.slice(8,10));
+      var timeDate = new Date(arr48hrTime[i].slice(0,4), arr48hrTime[i].slice(5,7)-1, arr48hrTime[i].slice(8,10));
       var arrDay = ["日", "一", "二", "三", "四", "五", "六" ];
       var getDay = timeDate.getDay();
+      var getDate = timeDate.getDate();
       var DayTemp = arrDay[getDay];
-      if (e[5] === "0" ) {
-        th.textContent = e.slice(6,7) + "/" + e.slice(8,10) + "(" + DayTemp + ") " + e.slice(11,16);
+      if (arr48hrTime[i][5] === "0" ) {
+        th.textContent = arr48hrTime[i].slice(6,7) + "/" + arr48hrTime[i].slice(8,10) + "(" + DayTemp + ") " + arr48hrTime[i].slice(11,16);
       } else {
-        th.textContent = e.slice(5,7) + "/" + e.slice(8,10) + "(" + DayTemp + ") " + e.slice(11,16);
+        th.textContent = arr48hrTime[i].slice(5,7) + "/" + arr48hrTime[i].slice(8,10) + "(" + DayTemp + ") " + arr48hrTime[i].slice(11,16);
       }
       forecastTime48hr.append(th);
-    })
+      if (i >= 1 && getDate === parseInt(arr48hrTime[i-1].slice(8,10)) ) {
+        th.textContent = arr48hrTime[i].slice(11,16);
+      }
+
+    }
+
     forecastTemp48hr = document.getElementById("forecast-48hrs-temp");
     arr48hrTemp.forEach(function (e) {
       var td = document.createElement("td");
@@ -338,7 +419,7 @@ function forecast48hr() {
     })
     // Get 48hr forecast PoP6h
     arrPoP6hTemp = regionforecast48hr.weatherElement[7].time;
-    for (var i = 0; i < arrPoP6hTemp.length; i++) {
+    for (var i = 0; i < 8; i++) {
       arr48hrPoP6h[i] = arrPoP6hTemp[i].elementValue[0].value;
     }
     forecastPoP6h48hr = document.getElementById("forecast-48hrs-PoP6h");
@@ -352,22 +433,26 @@ function forecast48hr() {
     })
     // Get 48hr forecast Wx
     arr48hrWxTemp = regionforecast48hr.weatherElement[1].time;
-    console.log(arr48hrWxTemp);
     for (var i = 0; i < arr48hrWxTemp.length; i++) {
        Wx48hrTemp = parseInt(arr48hrWxTemp[i].elementValue[1].value);
        arr48hrWx[i] = getWeatherCode(WEATHER_CODE, Wx48hrTemp);
     }
-
     forecastWx48hr = document.getElementById("forecast-48hrs-Wx");
-    arr48hrWx.forEach(function (e) {
+    for (var i = 0; i < 16; i++) {
+      arrTempHours[i] = parseInt(arr48hrTime[i].slice(11,13));
+    }
+    for (var i = 0; i < 16; i++) {
       var td = document.createElement("td");
       var div = document.createElement("div");
-      Wx48hrClass = "WxImage" + e;
+      if (arr48hrWx[i] === 0 && arrTempHours[i] >= 18 || arrTempHours[i] < 6) {
+        Wx48hrClass = "WxImage11N";
+      } else {
+        Wx48hrClass = "WxImage" + arr48hrWx[i];
+      }
       div.classList.add("WxImage", Wx48hrClass);
       td.append(div);
       forecastWx48hr.append(td);
-    })
-    // Get current PoP 
+    }
   })
 }
 
@@ -386,7 +471,7 @@ function forecast7d() {
     console.log(regionforecast7d);
     // Get 7days forcast Date //
     arr7dDateTemp = regionforecast7d.weatherElement[8].time;
-    var todayDD = new Date().getDate();
+    todayDD = new Date().getDate();
     for (var i = 1; i < arr7dDateTemp.length; i++) {
       if (todayDD !== parseInt(arr7dDateTemp[i].startTime.slice(8,10))) {
         for (var j = i; j < arr7dDateTemp.length; j+=2) {

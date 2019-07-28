@@ -3,6 +3,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
   <title>Weather Today</title>
   <link rel="stylesheet" href="index.css">
 </head>
@@ -10,52 +11,22 @@
 <body>
 
 <div id="box">
-  <div id="current-container" class="container">
-    <div class="text-box">
-      <p id="location"></p>
-      <div id="current-weather-image"></div>
-      <div id="current-weather"></div>
-      <div id="current-temp"></div>
-    </div>
-    <div class="text-box">
-      <div id="current-AQI" class="current-info-2">
-        <p>AQI</p>
-      </div>
-      <div id="current-PoP" class="current-info-2">
-        <p>降雨機率</p>
-        <div class="WxImage imgPoP"></div>
-      </div>
-      <div id="current-UVI" class="current-info-2">
-        <p>紫外線</p>
-        <div class="WxImage imgUVI-night"></div>
+  <div id="upper-container">
+    <div id="current-container" class="upper-box">
+      <div class="text-box">
+        <p id="location"></p>
+        <div id="current-temp" class="current-info"></div>
+        <div id="current-AQI" class="current-info">
+          <p>AQI <br><span>空氣品質指標</span></p>
+        </div>
+        <div id="current-UVI" class="current-info">
+          <p>紫外線</p>
+        </div>
       </div>
     </div>
-
-  </div>
-
-  <div id="forecast-container" class="container">
-    <div class="text-box">
-      <div id="forecast-48hrs">每3小時預報
-        <table>
-          <thead>
-            <tr id="forecast-48hrs-time">
-              <th>時間</th>
-            </tr>
-          </thead>
-          <tr id="forecast-48hrs-Wx">
-            <td>天氣狀況</td>
-          </tr>
-          <tr id="forecast-48hrs-temp">
-            <td>氣溫</td>
-          </tr>
-          <tr id="forecast-48hrs-PoP6h">
-            <td>降雨機率</td>
-          </tr>
-        </table>
-      </div>
-    </div>
-    <div class="text-box">
-      <div id="forecast-7days">未來一週預報
+    <div id="forecast-7days-box" class="text-box upper-box">
+      <div id="forecast-7days">
+        <h3>未來一週預報</h3>
         <table>
           <thead>
             <tr id="forecast-7d-date">
@@ -74,9 +45,33 @@
         </table>
       </div>
     </div>
-
   </div>
+  <div id="forecast-48hrs-box" class="text-box">
+    <div id="forecast-48hrs">
+      <h3>每3小時預報</h3>
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr id="forecast-48hrs-time">
+              <!-- <th>時間</th> -->
+            </tr>
+          </thead>
+          <tr id="forecast-48hrs-Wx">
+            <!-- <td>天氣狀況</td> -->
+          </tr>
+          <tr id="forecast-48hrs-temp">
+            <!-- <td>氣溫</td> -->
+          </tr>
+          <tr id="forecast-48hrs-PoP6h">
+            <!-- <td>降雨機率</td> -->
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
+
 
 
 <script src="index.js"></script>

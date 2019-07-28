@@ -1,55 +1,156 @@
+body {
+  margin: 0;
+}
 
 #box {
-  width: 95%;
-  height: 700px;
+  width: 100%;
+  height: 100%;
+  min-width: 800px;
+  min-height: 600px;
   margin: auto;
+  background-color: rgba(255,192,203,.7)
 }
 
-.container {
-  width: 48%;
-  height: 700px;
-  float: left;
-  background-color: rgba(239,239,239,.5);
-  margin: 1%;
-  border-radius: 30px;
-}
 
 .text-box {
-  font-size: 28px;
+  font-size: 24px;
   text-align: center;
-  padding: 50px 20px;
   color: #444444;
-  overflow: hidden;
 }
 
-.current-info-2 {
+.upper-box {
+  width: 590px;
   display: inline-block;
-  width: 200px;
-  height: 250px;
+  margin: 20px 10px;
+  border-radius: 30px;
+  height: 360px;
+  overflow: hidden;
+  padding: 10px 10px;
+}
+
+#upper-container {
+  width: 1330px;
+  margin: auto;
+
+}
+#current-container {
+  border: 15px solid rgba(254,255,192,.7);
+  background-color: #fff;
+}
+
+#forecast-7days-box {
+  border: 15px solid rgba(254,255,192,.7);
+  background-color: #fff;
+}
+
+#forecast-48hrs-box {
+  width: 1240px;
+  border: 15px solid rgba(254,255,192,.7);
+  margin: 0 auto 20px;
+  border-radius: 30px;
+  padding: 20px;
+  background-color: #fff;
+}
+
+.current-info {
+  display: inline-block;
+  width: 160px;
+  height: 160px;
+  border-radius: 90px;
+  border: 10px solid rgba(0,128,0,.4);
+  overflow: hidden;
+  margin: 5px;
 }
 
 .text-box div p:first-of-type {
-  font-size: 36px;
-  margin: 10px auto;
+  font-size: 24px;
+  margin: 12px auto 0;
+  line-height: 20px;
 }
 
-.imgPoP {
-  background-position: 0 -448px;
+.text-box div p:first-of-type span {
+  font-size: 16px;
 }
 
-.imgUVI {
-  background-position: -64px -256px;
+#current-AQI div:last-of-type, #current-UVI div:last-of-type {
+  font-size: 20px;
 }
 
-.imgUVI-night {
-  background-position: -384px -256px;
+.text-box > p {
+  padding: 0.5em 0 1em;
 }
 
-
-#current-temp {
-  font-size: 100px;
+.current-temp-text {
+  font-size: 60px;
+  font-weight: 600;
+  margin: auto;
+  line-height: 160px;
 }
 
+.current-AQI-text {
+  font-size: 60px;
+  font-weight: 600;
+  margin: auto;
+  line-height: 60px;
+}
+
+#current-UVI p {
+  padding: 14px 0 5px;
+}
+
+.level-mid {
+  border-color: rgba(255,255,0,.4);
+}
+
+.level-high {
+  border-color: rgba(255,165,0,.4);
+}
+
+.level-over {
+  border-color: rgba(255,0,0,.4);
+}
+
+.level-danger {
+  border-color: rgba(128,0,128,.4);
+}
+
+.level-damage {
+  border-color: rgba(127,34,35,.4);
+}
+
+.upper-box table tr td:first-of-type,
+.upper-box table tr th:first-of-type {
+  font-size: 20px;
+  width: 80px;
+}
+
+table tr {
+  height: 70px;
+}
+
+table {
+  padding: 5px 0;
+}
+
+h3 {
+  margin: .3em;
+}
+
+#forecast-48hrs table td {
+  width: 90px;
+}
+
+#forecast-48hrs table th {
+  vertical-align: bottom;
+}
+
+table tr th {
+  font-size: 20px;
+}
+
+.table-box {
+  overflow: auto;
+}
 
 .WxImage {
   width: 64px;
@@ -101,4 +202,8 @@
 
 .WxImage10 {
   background-position: -320px -320px;
+}
+
+.WxImage11N {
+  background-position: -384px -256px;
 }
