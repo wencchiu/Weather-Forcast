@@ -41,50 +41,37 @@ var getCurrentAutoObsUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-
 var getCurrentManObsUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
 function presentCurrentObs() {
   // get auto-observation data into city/county array
-  var currentAutoObs = fetch(getCurrentAutoObsUrl);
-  var currentAutoObs2 = currentAutoObs.then(function (res) {
+  var currentAutoObs = fetch(getCurrentAutoObsUrl)
+	.then(function (res) {
     return res.json();
-  })
-  currentAutoObs2.then(function (allstation) {
-    var arrAll = allstation.records.location;
-    if (arrObsInCityTemp.length === 0){
-      for (var i = 0; i < arrAll.length; i++) {
-        if (arrAll[i].parameter[0].parameterValue === currentCity) {
-          arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "auto"]);
-        }
-      }
-    } else {
-      for (var i = 0; i < arrAll.length; i++) {
-        if (arrAll[i].parameter[0].parameterValue === currentCity) {
-          arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "auto"]);
-        }
-      }
-      getNearestStation(arrObsInCityTemp);
-    }
   })
   // get manual-observation data into city/county array
-  var currentManObs = fetch(getCurrentManObsUrl);
-  var currentManObs2 = currentManObs.then(function (res) {
+  fetch(getCurrentManObsUrl)
+  .then(function (res) {
     return res.json();
   })
-  currentManObs2.then(function (allstation) {
-    var arrAll = allstation.records.location;
-    if (arrObsInCityTemp.length === 0){
-      for (var i = 0; i < arrAll.length; i++) {
-        if (arrAll[i].parameter[0].parameterValue === currentCity) {
-          arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "manual"]);
-        }
-      }
-    } else {
-      for (var i = 0; i < arrAll.length; i++) {
-        if (arrAll[i].parameter[0].parameterValue === currentCity) {
-          arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "manual"]);
-        }
-      }
-      getNearestStation(arrObsInCityTemp);
-    }
-    getCurrentUVI(allstation);
+	.then(function (allstation) {
+		getCurrentUVI(allstation);
+		return getStationInCity(allstation.records.location);
   })
+	.then(function (arrObsInCityTemp) {
+		currentAutoObs.then(function (allstationAuto) {
+			var arrboth = arrObsInCityTemp.concat(getStationInCity(allstationAuto.records.location));
+			getNearestStation(arrboth);
+		})
+	})
+
+function getStationInCity(arrAll) {
+	var arrObsInCityTemp = [];
+	for (var i = 0; i < arrAll.length; i++) {
+		if (arrAll[i].parameter[0].parameterValue === currentCity) {
+			arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "manual"]);
+		}
+	}
+	return arrObsInCityTemp;
+}
+
+
   // get the nearest station (in both auto & manual stations) temp data
   function getNearestStation(arrObsInCity) {
     for (var i = 0; i < arrObsInCity.length; i++) {
