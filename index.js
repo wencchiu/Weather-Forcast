@@ -32,7 +32,6 @@ function presentLocation() {
   });
 }
 
-
 var arrObsInCity = [], arrObsInCityD = [], arrObsInCityTemp = [];
 var nearStation, nearTemp;
 var currentWeatherImage, currentWeather, currentTemp, currentAQI, currentPoP, currentUVI;
@@ -40,13 +39,16 @@ var nowWxImage, nowWx, nowPoP, nowUVI;
 var getCurrentAutoObsUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0001-001?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
 var getCurrentManObsUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-06FAD906-0869-4F4D-8A7C-1BB80EAC6A2F"
 function presentCurrentObs() {
-  // get auto-observation data into city/county array
-  var currentAutoObs = fetch(getCurrentAutoObsUrl)
+	// get auto-observation data into city/county array
+	var currentAutoObs = fetch(getCurrentAutoObsUrl)
 	.then(function (res) {
     return res.json();
   })
-  // get manual-observation data into city/county array
-  fetch(getCurrentManObsUrl)
+	.then(function (allstation) {
+		return getStationInCity(allstation.records.location);
+  })
+// get manual-observation data into city/county array
+	var currentManObs = fetch(getCurrentManObsUrl)
   .then(function (res) {
     return res.json();
   })
@@ -54,23 +56,21 @@ function presentCurrentObs() {
 		getCurrentUVI(allstation);
 		return getStationInCity(allstation.records.location);
   })
-	.then(function (arrObsInCityTemp) {
-		currentAutoObs.then(function (allstationAuto) {
-			var arrboth = arrObsInCityTemp.concat(getStationInCity(allstationAuto.records.location));
-			getNearestStation(arrboth);
-		})
+	Promise.all([currentAutoObs, currentManObs])
+	.then(function (values) {
+		var arrboth = values[0].concat(values[1]);
+		getNearestStation(arrboth);
 	})
-
-function getStationInCity(arrAll) {
-	var arrObsInCityTemp = [];
-	for (var i = 0; i < arrAll.length; i++) {
-		if (arrAll[i].parameter[0].parameterValue === currentCity) {
-			arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue, "manual"]);
+	// Select the stattions in current city
+	function getStationInCity(arrAll) {
+		var arrObsInCityTemp = [];
+		for (var i = 0; i < arrAll.length; i++) {
+			if (arrAll[i].parameter[0].parameterValue === currentCity) {
+				arrObsInCityTemp.push([arrAll[i].lat, arrAll[i].lon, arrAll[i].locationName, arrAll[i].weatherElement[3].elementValue]);
+			}
 		}
+		return arrObsInCityTemp;
 	}
-	return arrObsInCityTemp;
-}
-
 
   // get the nearest station (in both auto & manual stations) temp data
   function getNearestStation(arrObsInCity) {
@@ -535,34 +535,5 @@ function forecast7d() {
       td.append(div);
       forecastWx7d.append(td);
     })
-
   })
-  }
-
-
-
-
-  // var output = document.getElementById("weather");
-
-  // if(!navigator.geolocation){
-  //   output.innerHTML = "<p>您的瀏覽器不支援此服務</p>";
-  // }
-  //
-  // function success(location){
-  //   var latitude = location.coords.latitude;
-  //   var longitude = location.coords.longitude;
-  //   var weatherData = fetch('https://api.darksky.net/forecast/b49587083ee7d8afad9d3e90943723e1/' + latitude + "," + longitude)
-  //   // var weatherData2 = weatherData.then(function(response){
-  //   //   return response.json();
-  //   // })
-  //   var timezone = weatherData.timezone;
-  //   console.log(timezone);
-  // };
-  //
-  // function error(){
-  //   output.innerHTML = "<p>無法取得您的位置</p>";
-  // };
-  //
-  // output.innerHTML = "<p>定位中...</p>";
-  //
-  // navigator.geolocation.getCurrentPosition(success,error);
+}
